@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+  --color-discord-dark: #36393f;
+  --color-discord-darker: #2f3136;
+  --color-discord-darkest: #202225;
+  --color-discord-blurple: #7289da;
+  --color-discord-hover: #404249;
+  --color-discord-text: #dcddde;
+  --color-discord-muted: #8e9297;
+  --color-discord-divider: #42464d;
+}
+
+:root {
+  --background: var(--color-discord-dark);
+  --foreground: var(--color-discord-text);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Custom Scrollbar for Webkit */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-discord-darker);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-discord-darkest);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-discord-hover);
+}

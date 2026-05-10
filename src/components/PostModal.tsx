@@ -1,0 +1,228 @@
+import { useState } from "react";
+import { Post, Comment, Reaction } from "@/types";
+
+interface PostModalProps {
+  post: Post;
+  onClose: () => void;
+}
+
+export default function PostModal({ post, onClose }: PostModalProps) {
+  const [newComment, setNewComment] = useState("");
+  const [comments, setComments] = useState<Comment[]>(post.comments);
+  const [reactions, setReactions] = useState<Reaction[]>(post.reactions);
+
+  const handleAddComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+
+    const comment: Comment = {
+      id: Date.now().toString(),
+      user: {
+        id: "current-user",
+        name: "You",
+        avatarUrl: ""
+      },
+      content: newComment,
+      createdAt: new Date().toISOString()
+    };
+
+    setComments([...comments, comment]);
+    setNewComment("");
+  };
+
+  const handleToggleReaction = (emoji: string) => {
+    setReactions(reactions.map(r => {
+      if (r.emoji === emoji) {
+        return {
+          ...r,
+          count: r.userReacted ? r.count - 1 : r.count + 1,
+          userReacted: !r.userReacted
+        };
+      }
+      return r;
+    }));
+  };
+
+  const availableEmojis = ["👍", "🔥", "😂", "❤️", "🎉", "👀"];
+
+  const handleAddReaction = (emoji: string) => {
+    const existing = reactions.find(r => r.emoji === emoji);
+    if (existing) {
+      if (!existing.userReacted) {
+        handleToggleReaction(emoji);
+      }
+    } else {
+      setReactions([...reactions, { emoji, count: 1, userReacted: true }]);
+    }
+  };
+
+  // Prevent closing when clicking inside the modal
+  const handleModalClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
+  const date = new Date(post.createdAt);
+  const formattedDate = `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 sm:p-6 md:p-12 backdrop-blur-sm overflow-y-auto"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-discord-darker w-full max-w-5xl max-h-[90vh] rounded-xl shadow-2xl flex flex-col md:flex-row overflow-hidden border border-discord-divider"
+        onClick={handleModalClick}
+      >
+        {/* Left Side: Media */}
+        <div className="w-full md:w-3/5 bg-black flex items-center justify-center min-h-[300px] md:min-h-0 relative">
+          {post.videoUrl ? (
+            <video 
+              src={post.videoUrl} 
+              controls 
+              className="w-full h-full object-contain max-h-[50vh] md:max-h-[90vh]"
+              poster={post.thumbnailUrl}
+            />
+          ) : post.thumbnailUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img 
+              src={post.thumbnailUrl} 
+              alt={post.title} 
+              className="w-full h-full object-contain max-h-[50vh] md:max-h-[90vh]"
+            />
+          ) : (
+            <div className="text-discord-muted">No Media Available</div>
+          )}
+          
+          <button 
+            onClick={onClose}
+            className="absolute top-4 left-4 md:hidden bg-black/50 text-white w-8 h-8 rounded-full flex items-center justify-center"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Right Side: Details & Comments */}
+        <div className="w-full md:w-2/5 flex flex-col h-[50vh] md:h-auto max-h-[90vh]">
+          {/* Header */}
+          <div className="p-4 border-b border-discord-divider flex justify-between items-start shrink-0">
+            <div>
+              <h2 className="text-xl font-bold text-white mb-1">{post.title}</h2>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-5 h-5 rounded-full bg-discord-hover overflow-hidden flex items-center justify-center">
+                  {post.author.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={post.author.avatarUrl} alt={post.author.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[10px] text-white font-bold">{post.author.name.charAt(0)}</span>
+                  )}
+                </div>
+                <span className="text-sm font-medium text-white">{post.author.name}</span>
+                <span className="text-xs text-discord-muted ml-2">{formattedDate}</span>
+              </div>
+              <div className="flex flex-wrap gap-1 mt-2">
+                {post.tags.map((tag) => (
+                  <span key={tag} className="px-2 py-0.5 bg-discord-darkest text-discord-blurple text-xs font-semibold rounded-md">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <button 
+              onClick={onClose}
+              className="hidden md:flex text-discord-muted hover:text-white transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+          {/* Comments Area */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 bg-discord-dark">
+            {comments.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-discord-muted text-sm text-center">
+                No comments yet.<br/>Be the first to share your thoughts!
+              </div>
+            ) : (
+              comments.map((comment) => (
+                <div key={comment.id} className="flex gap-3 group">
+                  <div className="w-8 h-8 rounded-full bg-discord-hover shrink-0 overflow-hidden flex items-center justify-center mt-0.5">
+                    {comment.user.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={comment.user.avatarUrl} alt={comment.user.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs text-white font-bold">{comment.user.name.charAt(0)}</span>
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-medium text-white hover:underline cursor-pointer">{comment.user.name}</span>
+                      <span className="text-xs text-discord-muted">
+                        {new Date(comment.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      </span>
+                    </div>
+                    <p className="text-discord-text text-sm mt-0.5">{comment.content}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Reactions & Input Area */}
+          <div className="p-4 bg-discord-darker border-t border-discord-divider shrink-0">
+            {/* Reactions */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {reactions.map((reaction) => reaction.count > 0 && (
+                <button
+                  key={reaction.emoji}
+                  onClick={() => handleToggleReaction(reaction.emoji)}
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-sm transition-colors border
+                    ${reaction.userReacted 
+                      ? 'bg-discord-blurple/20 border-discord-blurple text-white' 
+                      : 'bg-discord-darkest border-transparent text-discord-muted hover:bg-discord-hover hover:text-white'
+                    }`}
+                >
+                  <span>{reaction.emoji}</span>
+                  <span className="font-medium">{reaction.count}</span>
+                </button>
+              ))}
+              
+              {/* Add Reaction Dropdown (Simplified as direct buttons for demo) */}
+              <div className="flex gap-1 items-center ml-2 border-l border-discord-divider pl-2">
+                {availableEmojis.slice(0, 4).map(emoji => (
+                  <button 
+                    key={emoji} 
+                    onClick={() => handleAddReaction(emoji)}
+                    className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-discord-hover transition-colors"
+                    title="Add reaction"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Comment Input */}
+            <form onSubmit={handleAddComment} className="flex gap-2">
+              <input
+                type="text"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Write a comment..."
+                className="flex-1 bg-discord-darkest text-discord-text px-4 py-2.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-discord-blurple text-sm"
+              />
+              <button 
+                type="submit"
+                disabled={!newComment.trim()}
+                className="bg-discord-blurple text-white px-4 py-2.5 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#5865F2] transition-colors"
+              >
+                Send
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
