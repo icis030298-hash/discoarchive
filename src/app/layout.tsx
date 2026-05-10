@@ -7,7 +7,7 @@ import MainLayout from "@/components/MainLayout";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "discoarchive",
+  title: "discordarchive",
   description: "A gallery-style archive for our Discord memories",
 };
 
