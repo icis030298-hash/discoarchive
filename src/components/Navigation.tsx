@@ -20,10 +20,10 @@ export default function Navigation({ onNewPost }: NavigationProps) {
         </Link>
         <div className="hidden md:flex gap-4 ml-6">
           <Link href="/" className="text-discord-muted hover:text-white transition-colors font-medium">
-            Gallery
+            갤러리
           </Link>
           <Link href="/event" className="text-discord-muted hover:text-white transition-colors font-medium">
-            Event
+            이벤트
           </Link>
         </div>
       </div>
@@ -36,7 +36,7 @@ export default function Navigation({ onNewPost }: NavigationProps) {
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
-          New Post
+          게시물 업로드
         </button>
       </div>
     </nav>

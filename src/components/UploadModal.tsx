@@ -59,7 +59,7 @@ export default function UploadModal({ onClose, onUpload }: UploadModalProps) {
       >
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Create New Post</h2>
+            <h2 className="text-2xl font-bold text-white">게시물 업로드</h2>
             <button onClick={onClose} className="text-discord-muted hover:text-white transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -97,30 +97,30 @@ export default function UploadModal({ onClose, onUpload }: UploadModalProps) {
                     <circle cx="8.5" cy="8.5" r="1.5"></circle>
                     <polyline points="21 15 16 10 5 21"></polyline>
                   </svg>
-                  <span className="font-medium">Click to upload image or video</span>
+                  <span className="font-medium">클릭하여 이미지나 동영상 업로드</span>
                 </div>
               )}
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-discord-muted uppercase mb-2">Title</label>
+              <label className="block text-xs font-bold text-discord-muted uppercase mb-2">제목</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="What's this memory about?"
+                placeholder=""
                 className="w-full bg-discord-darkest text-discord-text px-4 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-discord-blurple"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-discord-muted uppercase mb-2">Tags (comma separated)</label>
+              <label className="block text-xs font-bold text-discord-muted uppercase mb-2">해시태그</label>
               <input
                 type="text"
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
-                placeholder="Valorant, Minecraft, highlight..."
+                placeholder=""
                 className="w-full bg-discord-darkest text-discord-text px-4 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-discord-blurple"
               />
             </div>
@@ -131,14 +131,14 @@ export default function UploadModal({ onClose, onUpload }: UploadModalProps) {
                 onClick={onClose}
                 className="px-5 py-2.5 text-white hover:underline"
               >
-                Cancel
+                취소
               </button>
               <button 
                 type="submit"
                 disabled={!title}
                 className="bg-discord-blurple text-white px-6 py-2.5 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#5865F2] transition-colors"
               >
-                Post Memory
+                추억 남기기
               </button>
             </div>
           </form>

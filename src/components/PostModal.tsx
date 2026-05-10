@@ -170,7 +170,7 @@ export default function PostModal({ post, onClose, onDelete, onUpdate }: PostMod
                       onClick={handleSaveEdit}
                       className="bg-discord-blurple text-white px-2 py-1 rounded text-xs font-bold hover:bg-[#5865F2]"
                     >
-                      SAVE
+                      저장
                     </button>
                   ) : (
                     <>
@@ -212,7 +212,7 @@ export default function PostModal({ post, onClose, onDelete, onUpdate }: PostMod
                   className="bg-discord-darkest text-discord-blurple border border-discord-blurple rounded px-2 py-0.5 text-xs w-full"
                   value={editTags}
                   onChange={(e) => setEditTags(e.target.value)}
-                  placeholder="Tags (comma separated)"
+                  placeholder="해시태그 (쉼표로 구분)"
                 />
               ) : (
                 <div className="flex flex-wrap gap-1 mt-2">
@@ -239,7 +239,7 @@ export default function PostModal({ post, onClose, onDelete, onUpdate }: PostMod
           <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 bg-discord-dark">
             {comments.length === 0 ? (
               <div className="h-full flex items-center justify-center text-discord-muted text-sm text-center">
-                No comments yet.<br/>Be the first to share your thoughts!
+                아직 댓글이 없습니다.<br/>첫 소감을 남겨보세요!
               </div>
             ) : (
               comments.map((comment) => (
@@ -306,7 +306,7 @@ export default function PostModal({ post, onClose, onDelete, onUpdate }: PostMod
                 type="text"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Write a comment..."
+                placeholder="댓글 작성..."
                 className="flex-1 bg-discord-darkest text-discord-text px-4 py-2.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-discord-blurple text-sm"
               />
               <button 
@@ -314,7 +314,7 @@ export default function PostModal({ post, onClose, onDelete, onUpdate }: PostMod
                 disabled={!newComment.trim()}
                 className="bg-discord-blurple text-white px-4 py-2.5 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#5865F2] transition-colors"
               >
-                Send
+                전송
               </button>
             </form>
           </div>
