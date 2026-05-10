@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Post, Comment, Reaction } from "@/types";
+import { Post } from "@/types";
+import { usePosts } from "@/context/PostContext";
 
 interface PostModalProps {
   post: Post;
@@ -9,9 +10,8 @@ interface PostModalProps {
 }
 
 export default function PostModal({ post, onClose, onDelete, onUpdate }: PostModalProps) {
+  const { nickname, handleAddComment: submitComment, handleAddReaction: submitReaction } = usePosts();
   const [newComment, setNewComment] = useState("");
-  const [comments, setComments] = useState<Comment[]>(post.comments);
-  const [reactions, setReactions] = useState<Reaction[]>(post.reactions);
   
   // Edit & Delete States
   const [isEditing, setIsEditing] = useState(false);
@@ -40,67 +40,19 @@ export default function PostModal({ post, onClose, onDelete, onUpdate }: PostMod
     }
   };
 
-  const handleAddComment = (e: React.FormEvent) => {
+  const handleCommentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim()) return;
-
-    const comment: Comment = {
-      id: Date.now().toString(),
-      user: {
-        id: "current-user",
-        name: "You",
-        avatarUrl: ""
-      },
-      content: newComment,
-      createdAt: new Date().toISOString()
-    };
-
-    const updatedComments = [...comments, comment];
-    setComments(updatedComments);
-    if (onUpdate) {
-      onUpdate(post.id, { comments: updatedComments });
-    }
+    submitComment(post.id, newComment);
     setNewComment("");
-  };
-
-  const handleToggleReaction = (emoji: string) => {
-    const updatedReactions = reactions.map(r => {
-      if (r.emoji === emoji) {
-        return {
-          ...r,
-          count: r.userReacted ? r.count - 1 : r.count + 1,
-          userReacted: !r.userReacted
-        };
-      }
-      return r;
-    });
-    setReactions(updatedReactions);
-    if (onUpdate) {
-      onUpdate(post.id, { reactions: updatedReactions });
-    }
   };
 
   const availableEmojis = ["👍", "🔥", "😂", "❤️", "🎉", "👀"];
 
-  const handleAddReaction = (emoji: string) => {
-    const existing = reactions.find(r => r.emoji === emoji);
-    let updatedReactions;
-    if (existing) {
-      if (!existing.userReacted) {
-        updatedReactions = reactions.map(r => 
-          r.emoji === emoji ? { ...r, count: r.count + 1, userReacted: true } : r
-        );
-      } else {
-        return;
-      }
-    } else {
-      updatedReactions = [...reactions, { emoji, count: 1, userReacted: true }];
-    }
-    setReactions(updatedReactions);
-    if (onUpdate) {
-      onUpdate(post.id, { reactions: updatedReactions });
-    }
+  const handleReactionClick = (emoji: string) => {
+    submitReaction(post.id, emoji);
   };
+
 
   // Prevent closing when clicking inside the modal
   const handleModalClick = (e: React.MouseEvent) => {
@@ -237,12 +189,12 @@ export default function PostModal({ post, onClose, onDelete, onUpdate }: PostMod
 
           {/* Comments Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 bg-discord-dark">
-            {comments.length === 0 ? (
+            {post.comments.length === 0 ? (
               <div className="h-full flex items-center justify-center text-discord-muted text-sm text-center">
                 아직 댓글이 없습니다.<br/>첫 소감을 남겨보세요!
               </div>
             ) : (
-              comments.map((comment) => (
+              post.comments.map((comment) => (
                 <div key={comment.id} className="flex gap-3 group">
                   <div className="w-8 h-8 rounded-full bg-discord-hover shrink-0 overflow-hidden flex items-center justify-center mt-0.5">
                     {comment.user.avatarUrl ? (
@@ -270,15 +222,11 @@ export default function PostModal({ post, onClose, onDelete, onUpdate }: PostMod
           <div className="p-4 bg-discord-darker border-t border-discord-divider shrink-0">
             {/* Reactions */}
             <div className="flex flex-wrap gap-2 mb-3">
-              {reactions.map((reaction) => reaction.count > 0 && (
+              {post.reactions.map((reaction) => reaction.count > 0 && (
                 <button
                   key={reaction.emoji}
-                  onClick={() => handleToggleReaction(reaction.emoji)}
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-sm transition-colors border
-                    ${reaction.userReacted 
-                      ? 'bg-discord-blurple/20 border-discord-blurple text-white' 
-                      : 'bg-discord-darkest border-transparent text-discord-muted hover:bg-discord-hover hover:text-white'
-                    }`}
+                  onClick={() => handleReactionClick(reaction.emoji)}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-md text-sm transition-colors border bg-discord-darkest border-transparent text-discord-muted hover:bg-discord-hover hover:text-white"
                 >
                   <span>{reaction.emoji}</span>
                   <span className="font-medium">{reaction.count}</span>
@@ -290,7 +238,7 @@ export default function PostModal({ post, onClose, onDelete, onUpdate }: PostMod
                 {availableEmojis.slice(0, 4).map(emoji => (
                   <button 
                     key={emoji} 
-                    onClick={() => handleAddReaction(emoji)}
+                    onClick={() => handleReactionClick(emoji)}
                     className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-discord-hover transition-colors"
                     title="Add reaction"
                   >
@@ -301,7 +249,7 @@ export default function PostModal({ post, onClose, onDelete, onUpdate }: PostMod
             </div>
 
             {/* Comment Input */}
-            <form onSubmit={handleAddComment} className="flex gap-2">
+            <form onSubmit={handleCommentSubmit} className="flex gap-2">
               <input
                 type="text"
                 value={newComment}
@@ -318,6 +266,7 @@ export default function PostModal({ post, onClose, onDelete, onUpdate }: PostMod
               </button>
             </form>
           </div>
+
         </div>
       </div>
     </div>

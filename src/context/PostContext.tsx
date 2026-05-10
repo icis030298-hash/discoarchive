@@ -111,9 +111,10 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newComment: Comment = {
       id: Math.random().toString(36).substr(2, 9),
       content,
-      author: {
+      user: {
         id: "user-" + nickname,
         name: nickname,
+        avatarUrl: "",
       },
       createdAt: new Date().toISOString(),
     };
