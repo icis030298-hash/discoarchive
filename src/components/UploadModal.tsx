@@ -54,9 +54,9 @@ export default function UploadModal({ onClose, onUpload }: UploadModalProps) {
         thumbnailUrl: finalMediaUrl ? (isVideo ? "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80" : finalMediaUrl) : defaultThumbnail,
         videoUrl: isVideo ? finalMediaUrl : undefined,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in upload process:", error);
-      alert("파일 업로드 중 오류가 발생했습니다. Storage 설정을 확인해주세요.");
+      alert(`업로드 실패: ${error.message || "알 수 없는 오류"}\n\nSupabase Storage의 'posts' 버킷 정책(Policy)이 모든 사용자에게 허용되어 있는지 확인해 주세요.`);
     } finally {
       setIsUploading(false);
     }
