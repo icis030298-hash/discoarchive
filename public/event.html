@@ -5,7 +5,7 @@
     <title>VIRTUAL CRYPTO - FULL DENSITY</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bg: #36393f; --card: #2f3136; --primary: #00ff88; --secondary: #ff4d4d; --loss: #ff4d4d; --border: #222; --news-panel: #000; }
+        :root { --bg: #050508; --card: #0d0d14; --primary: #00ff88; --secondary: #ff4d4d; --loss: #ff4d4d; --border: #222; --news-panel: #000; }
         * { box-sizing: border-box; }
         body { font-family: 'Pretendard', sans-serif; background: var(--bg); color: #fff; margin: 0; padding: 10px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
@@ -85,6 +85,7 @@
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
         
         .btn-start { background: linear-gradient(45deg, #00ff88, #00aaff); color: #000; border: none; padding: 8px 25px; border-radius: 6px; font-weight: 900; cursor: pointer; font-size: 15px; }
+        .btn-reset { background: #333; color: #fff; border: 1px solid #444; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 10px; }
     </style>
 </head>
 <body>
@@ -95,8 +96,7 @@
         <div class="setting-group"><label>주기(ms)</label><input type="number" id="tick-ms" value="400"></div>
         <div class="setting-group"><label>블라인드</label><input type="checkbox" id="blind-toggle"></div>
         <button id="start-btn" class="btn-start" onclick="runSimulation()">EXCHANGE OPEN 🚀</button>
-        <button id="reset-btn" class="btn-reset" onclick="resetSimulation()" style="margin-left: 10px; background: #444; color: #fff; border: 1px solid #666; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer;">RESET 🔄</button>
-        <button id="clear-btn" class="btn-clear" onclick="hardReset()" style="margin-left: 5px; background: #ff4d4d; color: #fff; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; opacity: 0.8;">HARD RESET ⚠️</button>
+        <button id="reset-btn" class="btn-reset" onclick="resetSimulation()">RESET 🔄</button>
         <div id="global-timer">READY</div>
     </div>
 
@@ -124,12 +124,12 @@
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     const newsData = {
-        ultra_good: ["\u{1F680} {name} 흑인 말좆 양봉 출현! 숏충이 청산!", "\u{1F48E} {name} 메로나 출현! 흑두루미들 FOMO 폭발!", "\u{1F680} [속보] 일론 머스크, {name} 도입 확정!", "\u{1F31F} {name} 바이낸스 선물 상장 확정!"],
-        ultra_bad: ["\u{1F6A8} {name} 롱충이 대거 청산! 돔황챠!!", "\u{1F480} {name} 개흑우 벗방남들 손절 속출...", "\u{1F6A8} [긴급] {name} 메인넷 해킹 공격 확인!", "\u{26A0}\u{FE0F} [FUD] SEC, {name} 개발자 전격 기소"],
-        momentum_up: ["\u{1F4E1} [추세] {name} 상방 에너지! 세력 매집 중?", "\u{1F56F}\u{FE0F} [분석] {name} 바닥 다지기! 운전수 핸들 잡았다!"],
-        momentum_down: ["\u{26A0}\u{FE0F} [추세] {name} 하방 압력 심화! 지지선 어디고?", "\u{1F4C9} [분석] {name} 세력 이탈! 설거지 조심해라!"],
-        trend_up: ["\u{1F4C8} {name} 떡상 열차 출발! 무지성 풀매수 가즈아~", "\u{1F525} {name} 상방으로 말좆 제대로 꽂혔다!"],
-        trend_down: ["\u{1F4C9} {name} 계단식 하락... 이거 홀딩하면 개흑우", "\u{1F43B} {name} 곰형들 등판! 설거지 끝내고 나갔다"]
+        ultra_good: ["🚀 {name} 흑인 말좆 양봉 출현! 숏충이 청산!", "💎 {name} 메로나 출현! 흑두루미들 FOMO 폭발!", "🚀 [속보] 일론 머스크, {name} 도입 확정!", "🌟 {name} 바이낸스 선물 상장 확정!"],
+        ultra_bad: ["🚨 {name} 롱충이 대거 청산! 돔황챠!!", "💀 {name} 개흑우 벗방남들 손절 속출...", "🚨 [긴급] {name} 메인넷 해킹 공격 확인!", "⚠️ [FUD] SEC, {name} 개발자 전격 기소"],
+        momentum_up: ["📡 [추세] {name} 상방 에너지! 세력 매집 중?", "🕯️ [분석] {name} 바닥 다지기! 운전수 핸들 잡았다!"],
+        momentum_down: ["⚠️ [추세] {name} 하방 압력 심화! 지지선 어디고?", "📉 [분석] {name} 세력 이탈! 설거지 조심해라!"],
+        trend_up: ["📈 {name} 떡상 열차 출발! 무지성 풀매수 가즈아~", "🔥 {name} 상방으로 말좆 제대로 꽂혔다!"],
+        trend_down: ["📉 {name} 계단식 하락... 이거 홀딩하면 개흑우", "🐻 {name} 곰형들 등판! 설거지 끝내고 나갔다"]
     };
 
     function playSound(type) {
@@ -149,27 +149,14 @@
         intervals = [];
         stockStats = [];
         document.getElementById('chart-grid').innerHTML = '';
-        const timerEl = document.getElementById('global-timer');
-        timerEl.innerText = "READY";
-        timerEl.classList.remove('blinded');
+        document.getElementById('global-timer').innerText = "READY";
         document.getElementById('start-btn').disabled = false;
         document.getElementById('countdown-overlay').style.display = 'none';
     }
 
-    function hardReset() {
-        if(!confirm("모든 종목과 설정을 초기화하시겠습니까?")) return;
-        resetSimulation();
-        stockDataList = [
-            { name: "PASCAL", start: 500, min: 100, max: 1000, step: 15 },
-            { name: "YUNKO", start: 500, min: 100, max: 1000, step: 15 },
-            { name: "BTC", start: 500, min: 100, max: 1000, step: 15 }
-        ];
-        renderTags();
-    }
-
     function runSimulation() {
         if(audioCtx.state === 'suspended') audioCtx.resume();
-        resetSimulation(); // Cleanup before start
+        resetSimulation();
         document.getElementById('start-btn').disabled = true;
         const grid = document.getElementById('chart-grid'); grid.innerHTML = '';
         const isBlind = document.getElementById('blind-toggle').checked;
@@ -246,20 +233,20 @@
 
     function getNews(key, name) { return newsData[key][Math.floor(Math.random() * newsData[key].length)].replace(/{name}/g, name); }
     function addNewsToFeed(idx, text, type) {
-        const f = document.getElementById(`news-feed-${idx}`); const item = document.createElement('div');
-        item.className = `news-item ${type}`; item.innerText = text;
+        const f = document.getElementById('news-feed-' + idx); const item = document.createElement('div');
+        item.className = 'news-item ' + type; item.innerText = text;
         f.insertBefore(item, f.firstChild); if (f.children.length > 30) f.removeChild(f.lastChild);
     }
 
     function updateOrderbook(idx, price) {
-        const sellList = document.getElementById(`sell-list-${idx}`); const buyList = document.getElementById(`buy-list-${idx}`);
+        const sellList = document.getElementById('sell-list-' + idx); const buyList = document.getElementById('buy-list-' + idx);
         const createRow = (p, type) => { const qty = (Math.random() * 100).toFixed(0); return `<div class="order-row ${type}"><div class="depth-bar" style="width: ${qty}%"></div><span class="${type==='sell'?'sell-price':'buy-price'}">${p}</span><span style="color:#666;">${qty}K</span></div>`; };
         let sells = '', buys = ''; 
         for(let i=1; i<=7; i++) { sells = createRow(price + i, 'sell') + sells; buys += createRow(price - i, 'buy'); }
         sellList.innerHTML = sells; buyList.innerHTML = buys;
     }
 
-    function finishMarket() { stockDataList.forEach((s, i) => { const final = parseInt(document.getElementById(`p-${i}`).innerText); document.getElementById(`card-${i}`).style.borderColor = (final >= s.start) ? 'var(--primary)' : 'var(--secondary)'; }); }
+    function finishMarket() { stockDataList.forEach((s, i) => { const final = parseInt(document.getElementById('p-' + i).innerText); document.getElementById('card-' + i).style.borderColor = (final >= s.start) ? 'var(--primary)' : 'var(--secondary)'; }); }
     renderTags();
 </script>
 </body>
