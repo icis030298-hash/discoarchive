@@ -9,15 +9,31 @@ interface NavigationProps {
 }
 
 export default function Navigation({ onNewPost }: NavigationProps) {
-  const { nickname, avatarUrl, handleUpdateProfile } = usePosts();
+  const { nickname, avatarUrl, handleUpdateProfile, handleUploadAvatar } = usePosts();
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(nickname);
   const [tempAvatar, setTempAvatar] = useState(avatarUrl);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     setTempName(nickname);
     setTempAvatar(avatarUrl);
   }, [nickname, avatarUrl, isEditing]);
+
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const url = await handleUploadAvatar(file);
+      setTempAvatar(url);
+    } catch (err) {
+      alert("이미지 업로드에 실패했습니다.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleProfileSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,14 +72,25 @@ export default function Navigation({ onNewPost }: NavigationProps) {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase font-bold text-discord-muted mb-1 block">프로필 이미지 URL</label>
-                  <input
-                    type="text"
-                    value={tempAvatar}
-                    onChange={(e) => setTempAvatar(e.target.value)}
-                    placeholder="https://..."
-                    className="w-full bg-discord-darkest text-white text-sm px-3 py-2 rounded border border-discord-divider outline-none focus:border-discord-blurple"
-                  />
+                  <label className="text-[10px] uppercase font-bold text-discord-muted mb-1 block">프로필 이미지</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={tempAvatar}
+                      onChange={(e) => setTempAvatar(e.target.value)}
+                      placeholder="https://..."
+                      className="flex-1 bg-discord-darkest text-white text-sm px-3 py-2 rounded border border-discord-divider outline-none focus:border-discord-blurple"
+                    />
+                    <label className={`cursor-pointer bg-discord-hover hover:bg-gray-600 px-3 py-2 rounded border border-discord-divider transition-colors ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleAvatarFileChange}
+                      />
+                      <span className="text-xs text-white">{isUploading ? "..." : "📁"}</span>
+                    </label>
+                  </div>
                 </div>
                 <div className="flex gap-2 pt-2">
                   <button type="submit" className="flex-1 bg-discord-blurple text-white text-xs py-2 rounded font-bold hover:bg-[#5865F2] transition-colors">저장</button>

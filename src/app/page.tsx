@@ -22,13 +22,14 @@ export default function Home() {
     <main className="flex-1 flex flex-col">
       {/* Hero */}
       <section className="relative py-10 md:py-16 px-6 text-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-discord-blurple/10 to-transparent pointer-events-none" />
-        <h1 className="relative text-3xl md:text-5xl font-extrabold text-white mb-3 tracking-tight">
-          겜창들의 <span className="text-discord-blurple">방송국</span>
-        </h1>
-        <p className="relative text-discord-muted text-base md:text-lg max-w-xl mx-auto">
-          여기에 알아서 박제해라 이기들
-        </p>
+        <div className="text-center py-12 md:py-20 animate-in fade-in slide-in-from-top duration-1000">
+          <h1 className="text-5xl md:text-7xl font-black text-white mb-4 tracking-tighter">
+            discord<span className="text-discord-blurple">archive</span>
+          </h1>
+          <p className="text-discord-muted text-lg md:text-xl font-medium max-w-2xl mx-auto px-4">
+            추억들을 마음껏 박제하고 공유하는 우리들의 공간
+          </p>
+        </div>
       </section>
 
       {/* Tag Filters */}

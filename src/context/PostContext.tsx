@@ -12,6 +12,7 @@ interface PostContextType {
   setNickname: (name: string) => void;
   setAvatarUrl: (url: string) => void;
   handleUpdateProfile: (name: string, avatar: string) => void;
+  handleUploadAvatar: (file: File) => Promise<string>;
   handleUpload: (data: Omit<Post, "id" | "createdAt" | "comments" | "reactions" | "author">) => Promise<void>;
   handleDelete: (id: string) => Promise<void>;
   handleUpdate: (id: string, updates: Partial<Post>) => Promise<void>;
@@ -53,6 +54,24 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAvatarUrlState(avatar);
     localStorage.setItem("disco-nickname", name);
     localStorage.setItem("disco-avatar", avatar);
+  };
+
+  const handleUploadAvatar = async (file: File): Promise<string> => {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `avatars/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("posts")
+      .upload(filePath, file);
+
+    if (uploadError) {
+      console.error("Error uploading avatar:", uploadError);
+      throw uploadError;
+    }
+
+    const { data } = supabase.storage.from("posts").getPublicUrl(filePath);
+    return data.publicUrl;
   };
 
   const setNickname = (name: string) => {
@@ -195,6 +214,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setNickname,
         setAvatarUrl,
         handleUpdateProfile,
+        handleUploadAvatar,
         handleUpload,
         handleDelete,
         handleUpdate,
