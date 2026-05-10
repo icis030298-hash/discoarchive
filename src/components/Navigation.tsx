@@ -51,7 +51,7 @@ export default function Navigation({ onNewPost }: NavigationProps) {
             D
           </div>
           <span className="text-lg md:text-xl font-bold tracking-tight text-white group-hover:text-discord-blurple transition-colors">
-            discoarchive
+            discordarchive
           </span>
         </Link>
         

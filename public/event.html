@@ -95,7 +95,8 @@
         <div class="setting-group"><label>주기(ms)</label><input type="number" id="tick-ms" value="400"></div>
         <div class="setting-group"><label>블라인드</label><input type="checkbox" id="blind-toggle"></div>
         <button id="start-btn" class="btn-start" onclick="runSimulation()">EXCHANGE OPEN 🚀</button>
-        <button id="reset-btn" class="btn-reset" onclick="resetSimulation()" style="margin-left: 10px; background: #333; color: #fff; border: 1px solid #444; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer;">RESET 🔄</button>
+        <button id="reset-btn" class="btn-reset" onclick="resetSimulation()" style="margin-left: 10px; background: #444; color: #fff; border: 1px solid #666; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer;">RESET 🔄</button>
+        <button id="clear-btn" class="btn-clear" onclick="hardReset()" style="margin-left: 5px; background: #ff4d4d; color: #fff; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; opacity: 0.8;">HARD RESET ⚠️</button>
         <div id="global-timer">READY</div>
     </div>
 
@@ -153,6 +154,17 @@
         timerEl.classList.remove('blinded');
         document.getElementById('start-btn').disabled = false;
         document.getElementById('countdown-overlay').style.display = 'none';
+    }
+
+    function hardReset() {
+        if(!confirm("모든 종목과 설정을 초기화하시겠습니까?")) return;
+        resetSimulation();
+        stockDataList = [
+            { name: "PASCAL", start: 500, min: 100, max: 1000, step: 15 },
+            { name: "YUNKO", start: 500, min: 100, max: 1000, step: 15 },
+            { name: "BTC", start: 500, min: 100, max: 1000, step: 15 }
+        ];
+        renderTags();
     }
 
     function runSimulation() {
