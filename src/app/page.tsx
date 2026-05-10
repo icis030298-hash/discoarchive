@@ -21,42 +21,45 @@ export default function Home() {
   return (
     <main className="flex-1 flex flex-col">
       {/* Hero */}
-      <section className="relative py-16 px-6 text-center overflow-hidden">
+      <section className="relative py-10 md:py-16 px-6 text-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-discord-blurple/10 to-transparent pointer-events-none" />
-        <h1 className="relative text-4xl md:text-5xl font-extrabold text-white mb-3 tracking-tight">
+        <h1 className="relative text-3xl md:text-5xl font-extrabold text-white mb-3 tracking-tight">
           겜창들의 <span className="text-discord-blurple">방송국</span>
         </h1>
-        <p className="relative text-discord-muted text-lg max-w-xl mx-auto">
+        <p className="relative text-discord-muted text-base md:text-lg max-w-xl mx-auto">
           여기에 알아서 박제해라 이기들
         </p>
       </section>
 
       {/* Tag Filters */}
-      <section className="px-6 pb-6 flex flex-wrap items-center gap-2 max-w-7xl mx-auto w-full">
-        <button
-          onClick={() => setActiveTag(null)}
-          className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer ${
-            activeTag === null
-              ? "bg-discord-blurple text-white"
-              : "bg-discord-darker text-discord-muted hover:bg-discord-hover hover:text-white border border-discord-divider"
-          }`}
-        >
-          All
-        </button>
-        {allTags.map((tag) => (
+      <section className="px-6 pb-6 max-w-7xl mx-auto w-full">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar">
           <button
-            key={tag}
-            onClick={() => setActiveTag(tag === activeTag ? null : tag)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer ${
-              activeTag === tag
+            onClick={() => setActiveTag(null)}
+            className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
+              activeTag === null
                 ? "bg-discord-blurple text-white"
                 : "bg-discord-darker text-discord-muted hover:bg-discord-hover hover:text-white border border-discord-divider"
             }`}
           >
-            #{tag}
+            All
           </button>
-        ))}
+          {allTags.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => setActiveTag(tag === activeTag ? null : tag)}
+              className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                activeTag === tag
+                  ? "bg-discord-blurple text-white"
+                  : "bg-discord-darker text-discord-muted hover:bg-discord-hover hover:text-white border border-discord-divider"
+              }`}
+            >
+              #{tag}
+            </button>
+          ))}
+        </div>
       </section>
+
 
       {/* Gallery Grid */}
       <section className="px-6 pb-12 max-w-7xl mx-auto w-full">

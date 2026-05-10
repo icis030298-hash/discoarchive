@@ -22,9 +22,13 @@ export default function PostCard({ post, onClick }: PostCardProps) {
           <img 
             src={post.thumbnailUrl} 
             alt={post.title} 
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=800&q=80";
+            }}
             className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
+
           <div className="flex items-center justify-center w-full h-full text-discord-muted">
             No Media
           </div>
