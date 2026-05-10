@@ -2,21 +2,27 @@
 
 import { usePosts } from "@/context/PostContext";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface NavigationProps {
   onNewPost: () => void;
 }
 
 export default function Navigation({ onNewPost }: NavigationProps) {
-  const { nickname, setNickname } = usePosts();
+  const { nickname, avatarUrl, handleUpdateProfile } = usePosts();
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(nickname);
+  const [tempAvatar, setTempAvatar] = useState(avatarUrl);
 
-  const handleNicknameSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    setTempName(nickname);
+    setTempAvatar(avatarUrl);
+  }, [nickname, avatarUrl, isEditing]);
+
+  const handleProfileSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (tempName.trim()) {
-      setNickname(tempName.trim());
+      handleUpdateProfile(tempName.trim(), tempAvatar.trim());
       setIsEditing(false);
     }
   };
@@ -33,33 +39,57 @@ export default function Navigation({ onNewPost }: NavigationProps) {
           </span>
         </Link>
         
-        {/* Nickname Display */}
-        <div className="flex items-center ml-2 border-l border-discord-divider pl-4">
+        {/* Profile Section */}
+        <div className="relative flex items-center ml-2 border-l border-discord-divider pl-4">
           {isEditing ? (
-            <form onSubmit={handleNicknameSubmit} className="flex items-center gap-2">
-              <input
-                autoFocus
-                type="text"
-                value={tempName}
-                onChange={(e) => setTempName(e.target.value)}
-                className="bg-discord-darker text-white text-sm px-2 py-1 rounded border border-discord-blurple outline-none w-24 md:w-32"
-                onBlur={() => setIsEditing(false)}
-              />
-            </form>
+            <div className="absolute top-12 left-4 w-64 bg-discord-darker border border-discord-divider rounded-xl shadow-2xl p-4 z-[100] animate-in fade-in zoom-in duration-200">
+              <h3 className="text-white font-bold mb-3 text-sm">프로필 수정</h3>
+              <form onSubmit={handleProfileSubmit} className="space-y-3">
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-discord-muted mb-1 block">닉네임</label>
+                  <input
+                    autoFocus
+                    type="text"
+                    value={tempName}
+                    onChange={(e) => setTempName(e.target.value)}
+                    className="w-full bg-discord-darkest text-white text-sm px-3 py-2 rounded border border-discord-divider outline-none focus:border-discord-blurple"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase font-bold text-discord-muted mb-1 block">프로필 이미지 URL</label>
+                  <input
+                    type="text"
+                    value={tempAvatar}
+                    onChange={(e) => setTempAvatar(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full bg-discord-darkest text-white text-sm px-3 py-2 rounded border border-discord-divider outline-none focus:border-discord-blurple"
+                  />
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <button type="submit" className="flex-1 bg-discord-blurple text-white text-xs py-2 rounded font-bold hover:bg-[#5865F2] transition-colors">저장</button>
+                  <button type="button" onClick={() => setIsEditing(false)} className="flex-1 bg-discord-hover text-white text-xs py-2 rounded font-bold hover:bg-gray-600 transition-colors">취소</button>
+                </div>
+              </form>
+            </div>
           ) : (
             <button 
-              onClick={() => {
-                setTempName(nickname);
-                setIsEditing(true);
-              }}
-              className="flex items-center gap-2 hover:bg-discord-hover px-2 py-1 rounded transition-colors group"
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-3 hover:bg-discord-hover px-2 py-1 rounded transition-colors group"
             >
-              <div className="w-6 h-6 rounded-full bg-discord-blurple/20 flex items-center justify-center text-[10px] text-discord-blurple font-bold">
-                {nickname.charAt(0)}
+              <div className="w-8 h-8 rounded-full bg-discord-blurple/20 overflow-hidden flex items-center justify-center border-2 border-transparent group-hover:border-discord-blurple transition-all">
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarUrl} alt="pfp" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-[10px] text-discord-blurple font-bold">{nickname.charAt(0)}</span>
+                )}
               </div>
-              <span className="text-discord-text text-sm font-medium group-hover:text-white">
-                {nickname}
-              </span>
+              <div className="flex flex-col items-start">
+                <span className="text-[10px] text-discord-muted leading-none mb-1">Welcome</span>
+                <span className="text-discord-text text-sm font-bold group-hover:text-white leading-none">
+                  {nickname}
+                </span>
+              </div>
             </button>
           )}
         </div>
@@ -82,12 +112,9 @@ export default function Navigation({ onNewPost }: NavigationProps) {
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
-          <span className="hidden xs:inline">게시물 업로드</span>
-          <span className="xs:hidden">업로드</span>
+          <span className="hidden xs:inline">업로드</span>
         </button>
       </div>
     </nav>
   );
 }
-
-

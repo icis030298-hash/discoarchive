@@ -7,8 +7,11 @@ import { supabase } from "@/lib/supabase";
 interface PostContextType {
   posts: Post[];
   nickname: string;
+  avatarUrl: string;
   isLoaded: boolean;
   setNickname: (name: string) => void;
+  setAvatarUrl: (url: string) => void;
+  handleUpdateProfile: (name: string, avatar: string) => void;
   handleUpload: (data: Omit<Post, "id" | "createdAt" | "comments" | "reactions" | "author">) => Promise<void>;
   handleDelete: (id: string) => Promise<void>;
   handleUpdate: (id: string, updates: Partial<Post>) => Promise<void>;
@@ -21,11 +24,14 @@ const PostContext = createContext<PostContextType | undefined>(undefined);
 export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [nickname, setNicknameState] = useState<string>("익명");
+  const [avatarUrl, setAvatarUrlState] = useState<string>("");
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
-  // Load nickname and posts on mount
+  // Load profile on mount
   useEffect(() => {
     const savedNickname = localStorage.getItem("disco-nickname");
+    const savedAvatar = localStorage.getItem("disco-avatar");
+    
     if (savedNickname) {
       setNicknameState(savedNickname);
     } else {
@@ -34,12 +40,29 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setNicknameState(defaultName);
       localStorage.setItem("disco-nickname", defaultName);
     }
+
+    if (savedAvatar) {
+      setAvatarUrlState(savedAvatar);
+    }
+    
     fetchPosts();
   }, []);
+
+  const handleUpdateProfile = (name: string, avatar: string) => {
+    setNicknameState(name);
+    setAvatarUrlState(avatar);
+    localStorage.setItem("disco-nickname", name);
+    localStorage.setItem("disco-avatar", avatar);
+  };
 
   const setNickname = (name: string) => {
     setNicknameState(name);
     localStorage.setItem("disco-nickname", name);
+  };
+
+  const setAvatarUrl = (url: string) => {
+    setAvatarUrlState(url);
+    localStorage.setItem("disco-avatar", url);
   };
 
   const fetchPosts = async () => {
@@ -83,6 +106,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
         tags: data.tags,
         author_id: "user-" + nickname,
         author_name: nickname,
+        author_avatar_url: avatarUrl,
       },
     ]);
 
@@ -121,7 +145,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user: {
         id: "user-" + nickname,
         name: nickname,
-        avatarUrl: "",
+        avatarUrl: avatarUrl,
       },
       createdAt: new Date().toISOString(),
     };
@@ -166,8 +190,11 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         posts,
         nickname,
+        avatarUrl,
         isLoaded,
         setNickname,
+        setAvatarUrl,
+        handleUpdateProfile,
         handleUpload,
         handleDelete,
         handleUpdate,
