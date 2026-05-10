@@ -4,12 +4,29 @@ import { Post, Comment, Reaction } from "@/types";
 interface PostModalProps {
   post: Post;
   onClose: () => void;
+  onDelete?: (id: string) => void;
+  onUpdate?: (id: string, data: Partial<Post>) => void;
 }
 
-export default function PostModal({ post, onClose }: PostModalProps) {
+export default function PostModal({ post, onClose, onDelete, onUpdate }: PostModalProps) {
   const [newComment, setNewComment] = useState("");
   const [comments, setComments] = useState<Comment[]>(post.comments);
   const [reactions, setReactions] = useState<Reaction[]>(post.reactions);
+  
+  // Edit Mode States
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(post.title);
+  const [editTags, setEditTags] = useState(post.tags.join(", "));
+
+  const handleSaveEdit = () => {
+    if (onUpdate) {
+      onUpdate(post.id, {
+        title: editTitle,
+        tags: editTags.split(",").map(t => t.trim()).filter(t => t !== "")
+      });
+    }
+    setIsEditing(false);
+  };
 
   const handleAddComment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,12 +43,16 @@ export default function PostModal({ post, onClose }: PostModalProps) {
       createdAt: new Date().toISOString()
     };
 
-    setComments([...comments, comment]);
+    const updatedComments = [...comments, comment];
+    setComments(updatedComments);
+    if (onUpdate) {
+      onUpdate(post.id, { comments: updatedComments });
+    }
     setNewComment("");
   };
 
   const handleToggleReaction = (emoji: string) => {
-    setReactions(reactions.map(r => {
+    const updatedReactions = reactions.map(r => {
       if (r.emoji === emoji) {
         return {
           ...r,
@@ -40,19 +61,32 @@ export default function PostModal({ post, onClose }: PostModalProps) {
         };
       }
       return r;
-    }));
+    });
+    setReactions(updatedReactions);
+    if (onUpdate) {
+      onUpdate(post.id, { reactions: updatedReactions });
+    }
   };
 
   const availableEmojis = ["👍", "🔥", "😂", "❤️", "🎉", "👀"];
 
   const handleAddReaction = (emoji: string) => {
     const existing = reactions.find(r => r.emoji === emoji);
+    let updatedReactions;
     if (existing) {
       if (!existing.userReacted) {
-        handleToggleReaction(emoji);
+        updatedReactions = reactions.map(r => 
+          r.emoji === emoji ? { ...r, count: r.count + 1, userReacted: true } : r
+        );
+      } else {
+        return;
       }
     } else {
-      setReactions([...reactions, { emoji, count: 1, userReacted: true }]);
+      updatedReactions = [...reactions, { emoji, count: 1, userReacted: true }];
+    }
+    setReactions(updatedReactions);
+    if (onUpdate) {
+      onUpdate(post.id, { reactions: updatedReactions });
     }
   };
 
@@ -107,15 +141,43 @@ export default function PostModal({ post, onClose }: PostModalProps) {
           <div className="p-4 border-b border-discord-divider flex justify-between items-start shrink-0">
             <div className="flex-1">
               <div className="flex justify-between items-start">
-                <h2 className="text-xl font-bold text-white mb-1">{post.title}</h2>
+                {isEditing ? (
+                  <input 
+                    className="bg-discord-darkest text-white border border-discord-blurple rounded px-2 py-1 text-lg font-bold w-full mr-2"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    autoFocus
+                  />
+                ) : (
+                  <h2 className="text-xl font-bold text-white mb-1">{post.title}</h2>
+                )}
+                
                 <div className="flex gap-2 ml-4">
-                  {/* Admin Controls */}
-                  <button className="p-1.5 text-discord-muted hover:text-white hover:bg-discord-hover rounded-md transition-all" title="Edit Post (Admin Only)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                  </button>
-                  <button className="p-1.5 text-discord-muted hover:text-discord-loss hover:bg-discord-loss/10 rounded-md transition-all" title="Delete Post (Admin Only)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                  </button>
+                  {isEditing ? (
+                    <button 
+                      onClick={handleSaveEdit}
+                      className="bg-discord-blurple text-white px-2 py-1 rounded text-xs font-bold hover:bg-[#5865F2]"
+                    >
+                      SAVE
+                    </button>
+                  ) : (
+                    <>
+                      <button 
+                        onClick={() => setIsEditing(true)}
+                        className="p-1.5 text-discord-muted hover:text-white hover:bg-discord-hover rounded-md transition-all" 
+                        title="Edit Post"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                      </button>
+                      <button 
+                        onClick={() => onDelete && onDelete(post.id)}
+                        className="p-1.5 text-discord-muted hover:text-discord-loss hover:bg-discord-loss/10 rounded-md transition-all" 
+                        title="Delete Post"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2 mb-2">
@@ -130,17 +192,27 @@ export default function PostModal({ post, onClose }: PostModalProps) {
                 <span className="text-sm font-medium text-white">{post.author.name}</span>
                 <span className="text-xs text-discord-muted ml-2">{formattedDate}</span>
               </div>
-              <div className="flex flex-wrap gap-1 mt-2">
-                {post.tags.map((tag) => (
-                  <span key={tag} className="px-2 py-0.5 bg-discord-darkest text-discord-blurple text-xs font-semibold rounded-md">
-                    #{tag}
-                  </span>
-                ))}
-              </div>
+              
+              {isEditing ? (
+                <input 
+                  className="bg-discord-darkest text-discord-blurple border border-discord-blurple rounded px-2 py-0.5 text-xs w-full"
+                  value={editTags}
+                  onChange={(e) => setEditTags(e.target.value)}
+                  placeholder="Tags (comma separated)"
+                />
+              ) : (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {post.tags.map((tag) => (
+                    <span key={tag} className="px-2 py-0.5 bg-discord-darkest text-discord-blurple text-xs font-semibold rounded-md">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             <button 
               onClick={onClose}
-              className="hidden md:flex text-discord-muted hover:text-white transition-colors"
+              className="hidden md:flex text-discord-muted hover:text-white transition-colors ml-2"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -199,7 +271,7 @@ export default function PostModal({ post, onClose }: PostModalProps) {
                 </button>
               ))}
               
-              {/* Add Reaction Dropdown (Simplified as direct buttons for demo) */}
+              {/* Add Reaction Dropdown */}
               <div className="flex gap-1 items-center ml-2 border-l border-discord-divider pl-2">
                 {availableEmojis.slice(0, 4).map(emoji => (
                   <button 
@@ -237,3 +309,4 @@ export default function PostModal({ post, onClose }: PostModalProps) {
     </div>
   );
 }
+
