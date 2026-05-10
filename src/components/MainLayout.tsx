@@ -1,12 +1,11 @@
 "use client";
 
-// Force update for Cloudflare Build - Timestamp: 2024-05-10 23:35
 import { useState } from "react";
 import Navigation from "./Navigation";
 import UploadModal from "./UploadModal";
 import { usePosts } from "@/context/PostContext";
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { handleUpload, isLoaded } = usePosts();
   const [showUploadModal, setShowUploadModal] = useState(false);
 
