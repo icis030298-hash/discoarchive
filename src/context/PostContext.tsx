@@ -1,26 +1,44 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { Post } from "@/types";
+import { Post, Comment } from "@/types";
 import { supabase } from "@/lib/supabase";
 
 interface PostContextType {
   posts: Post[];
-  setPosts: React.Dispatch<React.SetStateAction<Post[]>>;
-  isLoaded: boolean;
-  showUploadModal: boolean;
-  setShowUploadModal: (show: boolean) => void;
-  handleUpload: (data: any) => Promise<void>;
+  nickname: string;
+  setNickname: (name: string) => void;
+  handleUpload: (data: Omit<Post, "id" | "createdAt" | "comments" | "reactions" | "author">) => Promise<void>;
   handleDelete: (id: string) => Promise<void>;
-  handleUpdate: (id: string, data: Partial<Post>) => Promise<void>;
+  handleUpdate: (id: string, updates: Partial<Post>) => Promise<void>;
+  handleAddComment: (postId: string, content: string) => Promise<void>;
+  handleAddReaction: (postId: string, emoji: string) => Promise<void>;
 }
 
 const PostContext = createContext<PostContextType | undefined>(undefined);
 
-export function PostProvider({ children }: { children: React.ReactNode }) {
+export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [nickname, setNicknameState] = useState<string>("익명");
+
+  // Load nickname and posts on mount
+  useEffect(() => {
+    const savedNickname = localStorage.getItem("disco-nickname");
+    if (savedNickname) {
+      setNicknameState(savedNickname);
+    } else {
+      const randomId = Math.floor(Math.random() * 1000);
+      const defaultName = `친구_${randomId}`;
+      setNicknameState(defaultName);
+      localStorage.setItem("disco-nickname", defaultName);
+    }
+    fetchPosts();
+  }, []);
+
+  const setNickname = (name: string) => {
+    setNicknameState(name);
+    localStorage.setItem("disco-nickname", name);
+  };
 
   const fetchPosts = async () => {
     const { data, error } = await supabase
@@ -31,111 +49,132 @@ export function PostProvider({ children }: { children: React.ReactNode }) {
     if (error) {
       console.error("Error fetching posts:", error);
     } else {
-      // Map Supabase snake_case to our camelCase types
       const mappedPosts: Post[] = (data || []).map((p: any) => ({
         id: p.id,
         title: p.title,
         thumbnailUrl: p.thumbnail_url,
         videoUrl: p.video_url,
-        tags: p.tags || [],
-        createdAt: p.created_at,
-        author: { id: p.author_id, name: p.author_name, avatarUrl: "" },
+        tags: p.tags,
+        author: {
+          id: p.author_id,
+          name: p.author_name,
+        },
         comments: p.comments || [],
         reactions: p.reactions || [],
+        createdAt: p.created_at,
       }));
       setPosts(mappedPosts);
     }
-    setIsLoaded(true);
   };
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
-  const handleUpload = async (
-    data: Omit<Post, "id" | "createdAt" | "comments" | "reactions" | "author">
-  ) => {
+  const handleUpload = async (data: Omit<Post, "id" | "createdAt" | "comments" | "reactions" | "author">) => {
     const { error } = await supabase.from("posts").insert([
       {
         title: data.title,
         thumbnail_url: data.thumbnailUrl,
         video_url: data.videoUrl,
         tags: data.tags,
-        author_id: "current-user",
-        author_name: "You",
-        comments: [],
-        reactions: [
-          { emoji: "👍", count: 0, userReacted: false },
-          { emoji: "🔥", count: 0, userReacted: false },
-          { emoji: "❤️", count: 0, userReacted: false },
-        ],
+        author_id: "user-" + nickname,
+        author_name: nickname,
       },
     ]);
 
     if (error) {
       console.error("Error uploading post:", error);
-      alert("업로드 중 오류가 발생했습니다.");
-    } else {
-      fetchPosts();
-      setShowUploadModal(false);
+      throw error;
     }
+    fetchPosts();
   };
 
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("posts").delete().eq("id", id);
-
-    if (error) {
-      console.error("Error deleting post:", error);
-      alert("삭제 중 오류가 발생했습니다.");
-    } else {
-      fetchPosts();
-    }
+    if (error) console.error("Error deleting post:", error);
+    fetchPosts();
   };
 
-  const handleUpdate = async (id: string, updatedData: Partial<Post>) => {
-    // Map camelCase to snake_case for DB
-    const dbUpdate: any = {};
-    if (updatedData.title !== undefined) dbUpdate.title = updatedData.title;
-    if (updatedData.thumbnailUrl !== undefined) dbUpdate.thumbnail_url = updatedData.thumbnailUrl;
-    if (updatedData.videoUrl !== undefined) dbUpdate.video_url = updatedData.videoUrl;
-    if (updatedData.tags !== undefined) dbUpdate.tags = updatedData.tags;
-    if (updatedData.comments !== undefined) dbUpdate.comments = updatedData.comments;
-    if (updatedData.reactions !== undefined) dbUpdate.reactions = updatedData.reactions;
+  const handleUpdate = async (id: string, updates: Partial<Post>) => {
+    const { error } = await supabase
+      .from("posts")
+      .update({
+        title: updates.title,
+        tags: updates.tags,
+      })
+      .eq("id", id);
+    if (error) console.error("Error updating post:", error);
+    fetchPosts();
+  };
+
+  const handleAddComment = async (postId: string, content: string) => {
+    const post = posts.find((p) => p.id === postId);
+    if (!post) return;
+
+    const newComment: Comment = {
+      id: Math.random().toString(36).substr(2, 9),
+      content,
+      author: {
+        id: "user-" + nickname,
+        name: nickname,
+      },
+      createdAt: new Date().toISOString(),
+    };
 
     const { error } = await supabase
       .from("posts")
-      .update(dbUpdate)
-      .eq("id", id);
+      .update({
+        comments: [...post.comments, newComment],
+      })
+      .eq("id", postId);
 
-    if (error) {
-      console.error("Error updating post:", error);
+    if (error) console.error("Error adding comment:", error);
+    fetchPosts();
+  };
+
+  const handleAddReaction = async (postId: string, emoji: string) => {
+    const post = posts.find((p) => p.id === postId);
+    if (!post) return;
+
+    const existingReaction = post.reactions.find((r) => r.emoji === emoji);
+    let newReactions;
+
+    if (existingReaction) {
+      newReactions = post.reactions.map((r) =>
+        r.emoji === emoji ? { ...r, count: r.count + 1 } : r
+      );
     } else {
-      fetchPosts();
+      newReactions = [...post.reactions, { emoji, count: 1 }];
     }
+
+    const { error } = await supabase
+      .from("posts")
+      .update({ reactions: newReactions })
+      .eq("id", postId);
+
+    if (error) console.error("Error adding reaction:", error);
+    fetchPosts();
   };
 
   return (
     <PostContext.Provider
       value={{
         posts,
-        setPosts,
-        isLoaded,
-        showUploadModal,
-        setShowUploadModal,
+        nickname,
+        setNickname,
         handleUpload,
         handleDelete,
         handleUpdate,
+        handleAddComment,
+        handleAddReaction,
       }}
     >
       {children}
     </PostContext.Provider>
   );
-}
+};
 
-export function usePosts() {
+export const usePosts = () => {
   const context = useContext(PostContext);
   if (context === undefined) {
     throw new Error("usePosts must be used within a PostProvider");
   }
   return context;
-}
+};

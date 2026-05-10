@@ -26,12 +26,15 @@ export default function UploadModal({ onClose, onUpload }: UploadModalProps) {
       
       if (mediaFile) {
         const fileExt = mediaFile.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
+        const fileName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`;
         const filePath = `${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('posts')
-          .upload(filePath, mediaFile);
+          .upload(filePath, mediaFile, {
+            contentType: mediaFile.type,
+            upsert: true
+          });
 
         if (uploadError) throw uploadError;
 
@@ -39,7 +42,8 @@ export default function UploadModal({ onClose, onUpload }: UploadModalProps) {
           .from('posts')
           .getPublicUrl(filePath);
         
-        finalMediaUrl = publicUrl;
+        // Add timestamp to bypass cache
+        finalMediaUrl = `${publicUrl}?t=${Date.now()}`;
       }
 
       const defaultThumbnail = "https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=800&q=80";
