@@ -1,8 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { Post } from "@/types";
-import { DUMMY_POSTS } from "@/data/dummyPosts";
+import { supabase } from "@/lib/supabase";
 
 interface PostContextType {
   posts: Post[];
@@ -10,9 +10,9 @@ interface PostContextType {
   isLoaded: boolean;
   showUploadModal: boolean;
   setShowUploadModal: (show: boolean) => void;
-  handleUpload: (data: any) => void;
-  handleDelete: (id: string) => void;
-  handleUpdate: (id: string, data: Partial<Post>) => void;
+  handleUpload: (data: any) => Promise<void>;
+  handleDelete: (id: string) => Promise<void>;
+  handleUpdate: (id: string, data: Partial<Post>) => Promise<void>;
 }
 
 const PostContext = createContext<PostContextType | undefined>(undefined);
@@ -22,51 +22,96 @@ export function PostProvider({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
 
-  useEffect(() => {
-    const saved = localStorage.getItem("discoarchive-posts");
-    if (saved) {
-      try {
-        setPosts(JSON.parse(saved));
-      } catch (e) {
-        setPosts(DUMMY_POSTS);
-      }
+  const fetchPosts = async () => {
+    const { data, error } = await supabase
+      .from("posts")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching posts:", error);
     } else {
-      setPosts(DUMMY_POSTS);
+      // Map Supabase snake_case to our camelCase types
+      const mappedPosts: Post[] = (data || []).map((p: any) => ({
+        id: p.id,
+        title: p.title,
+        thumbnailUrl: p.thumbnail_url,
+        videoUrl: p.video_url,
+        tags: p.tags || [],
+        createdAt: p.created_at,
+        author: { id: p.author_id, name: p.author_name, avatarUrl: "" },
+        comments: p.comments || [],
+        reactions: p.reactions || [],
+      }));
+      setPosts(mappedPosts);
     }
     setIsLoaded(true);
-  }, []);
+  };
 
   useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem("discoarchive-posts", JSON.stringify(posts));
-    }
-  }, [posts, isLoaded]);
+    fetchPosts();
+  }, []);
 
-  const handleUpload = (
+  const handleUpload = async (
     data: Omit<Post, "id" | "createdAt" | "comments" | "reactions" | "author">
   ) => {
-    const newPost: Post = {
-      ...data,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      author: { id: "current-user", name: "You", avatarUrl: "" },
-      comments: [],
-      reactions: [
-        { emoji: "👍", count: 0, userReacted: false },
-        { emoji: "🔥", count: 0, userReacted: false },
-        { emoji: "❤️", count: 0, userReacted: false },
-      ],
-    };
-    setPosts([newPost, ...posts]);
-    setShowUploadModal(false);
+    const { error } = await supabase.from("posts").insert([
+      {
+        title: data.title,
+        thumbnail_url: data.thumbnailUrl,
+        video_url: data.videoUrl,
+        tags: data.tags,
+        author_id: "current-user",
+        author_name: "You",
+        comments: [],
+        reactions: [
+          { emoji: "👍", count: 0, userReacted: false },
+          { emoji: "🔥", count: 0, userReacted: false },
+          { emoji: "❤️", count: 0, userReacted: false },
+        ],
+      },
+    ]);
+
+    if (error) {
+      console.error("Error uploading post:", error);
+      alert("업로드 중 오류가 발생했습니다.");
+    } else {
+      fetchPosts();
+      setShowUploadModal(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setPosts(posts.filter((p) => p.id !== id));
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from("posts").delete().eq("id", id);
+
+    if (error) {
+      console.error("Error deleting post:", error);
+      alert("삭제 중 오류가 발생했습니다.");
+    } else {
+      fetchPosts();
+    }
   };
 
-  const handleUpdate = (id: string, updatedData: Partial<Post>) => {
-    setPosts(posts.map((p) => (p.id === id ? { ...p, ...updatedData } : p)));
+  const handleUpdate = async (id: string, updatedData: Partial<Post>) => {
+    // Map camelCase to snake_case for DB
+    const dbUpdate: any = {};
+    if (updatedData.title !== undefined) dbUpdate.title = updatedData.title;
+    if (updatedData.thumbnailUrl !== undefined) dbUpdate.thumbnail_url = updatedData.thumbnailUrl;
+    if (updatedData.videoUrl !== undefined) dbUpdate.video_url = updatedData.videoUrl;
+    if (updatedData.tags !== undefined) dbUpdate.tags = updatedData.tags;
+    if (updatedData.comments !== undefined) dbUpdate.comments = updatedData.comments;
+    if (updatedData.reactions !== undefined) dbUpdate.reactions = updatedData.reactions;
+
+    const { error } = await supabase
+      .from("posts")
+      .update(dbUpdate)
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error updating post:", error);
+    } else {
+      fetchPosts();
+    }
   };
 
   return (

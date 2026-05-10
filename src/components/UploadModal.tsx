@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { Post } from "@/types";
+import { supabase } from "@/lib/supabase";
 
 interface UploadModalProps {
   onClose: () => void;
@@ -9,23 +10,52 @@ interface UploadModalProps {
 export default function UploadModal({ onClose, onUpload }: UploadModalProps) {
   const [title, setTitle] = useState("");
   const [tags, setTags] = useState("");
-  const [mediaUrl, setMediaUrl] = useState("");
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [isVideo, setIsVideo] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title) return;
 
-    const defaultThumbnail = "https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=800&q=80";
+    setIsUploading(true);
+    try {
+      let finalMediaUrl = "";
+      
+      if (mediaFile) {
+        const fileExt = mediaFile.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `${fileName}`;
 
-    onUpload({
-      title,
-      tags: tags.split(",").map(t => t.trim()).filter(Boolean),
-      thumbnailUrl: mediaUrl ? (isVideo ? "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80" : mediaUrl) : defaultThumbnail,
-      videoUrl: isVideo ? mediaUrl : undefined,
-    });
+        const { error: uploadError } = await supabase.storage
+          .from('posts')
+          .upload(filePath, mediaFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('posts')
+          .getPublicUrl(filePath);
+        
+        finalMediaUrl = publicUrl;
+      }
+
+      const defaultThumbnail = "https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=800&q=80";
+
+      await onUpload({
+        title,
+        tags: tags.split(",").map(t => t.trim()).filter(Boolean),
+        thumbnailUrl: finalMediaUrl ? (isVideo ? "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80" : finalMediaUrl) : defaultThumbnail,
+        videoUrl: isVideo ? finalMediaUrl : undefined,
+      });
+    } catch (error) {
+      console.error("Error in upload process:", error);
+      alert("파일 업로드 중 오류가 발생했습니다. Storage 설정을 확인해주세요.");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleFileClick = () => {
@@ -35,10 +65,8 @@ export default function UploadModal({ onClose, onUpload }: UploadModalProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // In a real app, you would upload this to a server
-      // For the prototype, we just create a local object URL
+      setMediaFile(file);
       const url = URL.createObjectURL(file);
-      setMediaUrl(url);
       setPreviewUrl(url);
       setIsVideo(file.type.startsWith('video/'));
     }
@@ -85,7 +113,7 @@ export default function UploadModal({ onClose, onUpload }: UploadModalProps) {
               
               {previewUrl ? (
                 isVideo ? (
-                  <video src={previewUrl} className="w-full h-full object-contain" controls />
+                  <video src={previewUrl} className="w-full h-full object-contain" />
                 ) : (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={previewUrl} alt="Preview" className="w-full h-full object-contain" />
@@ -129,16 +157,25 @@ export default function UploadModal({ onClose, onUpload }: UploadModalProps) {
               <button 
                 type="button" 
                 onClick={onClose}
-                className="px-5 py-2.5 text-white hover:underline"
+                disabled={isUploading}
+                className="px-5 py-2.5 text-white hover:underline disabled:opacity-50"
               >
                 취소
               </button>
               <button 
                 type="submit"
-                disabled={!title}
-                className="bg-discord-blurple text-white px-6 py-2.5 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#5865F2] transition-colors"
+                disabled={!title || isUploading}
+                className="bg-discord-blurple text-white px-6 py-2.5 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#5865F2] transition-colors flex items-center gap-2"
               >
-                추억 남기기
+                {isUploading ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    업로드 중...
+                  </>
+                ) : "추억 남기기"}
               </button>
             </div>
           </form>
@@ -147,3 +184,4 @@ export default function UploadModal({ onClose, onUpload }: UploadModalProps) {
     </div>
   );
 }
+
