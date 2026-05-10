@@ -19,7 +19,7 @@ export default function EventPage() {
     <div className="flex-1 w-full max-w-7xl mx-auto px-4 py-6">
       <div className="bg-discord-darker rounded-xl border border-discord-divider overflow-hidden shadow-2xl h-[calc(100vh-140px)]">
         <iframe
-          src="/event.html"
+          src="/event-static.html"
           className="w-full h-full border-0"
           title="Event Page"
           allow="autoplay"

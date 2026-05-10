@@ -130,8 +130,8 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ]);
 
     if (error) {
-      console.error("Error uploading post:", error);
-      throw error;
+      console.error("Error inserting post to DB:", error);
+      throw new Error(`DB 저장 실패: ${error.message} (${error.details || "상세정보 없음"})`);
     }
     fetchPosts();
   };
