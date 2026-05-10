@@ -1,15 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Navigation from "./Navigation";
 import UploadModal from "./UploadModal";
 import { usePosts } from "@/context/PostContext";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { showUploadModal, setShowUploadModal, handleUpload, isLoaded } = usePosts();
-
-  if (!isLoaded) {
-    return <div className="min-h-screen bg-discord-dark" />;
-  }
+  const { handleUpload } = usePosts();
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   return (
     <>
@@ -24,3 +22,4 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </>
   );
 }
+
