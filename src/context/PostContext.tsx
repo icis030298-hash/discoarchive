@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 interface PostContextType {
   posts: Post[];
   nickname: string;
+  isLoaded: boolean;
   setNickname: (name: string) => void;
   handleUpload: (data: Omit<Post, "id" | "createdAt" | "comments" | "reactions" | "author">) => Promise<void>;
   handleDelete: (id: string) => Promise<void>;
@@ -20,6 +21,7 @@ const PostContext = createContext<PostContextType | undefined>(undefined);
 export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [nickname, setNicknameState] = useState<string>("익명");
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
   // Load nickname and posts on mount
   useEffect(() => {
@@ -41,29 +43,33 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const fetchPosts = async () => {
-    const { data, error } = await supabase
-      .from("posts")
-      .select("*")
-      .order("created_at", { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from("posts")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Error fetching posts:", error);
-    } else {
-      const mappedPosts: Post[] = (data || []).map((p: any) => ({
-        id: p.id,
-        title: p.title,
-        thumbnailUrl: p.thumbnail_url,
-        videoUrl: p.video_url,
-        tags: p.tags,
-        author: {
-          id: p.author_id,
-          name: p.author_name,
-        },
-        comments: p.comments || [],
-        reactions: p.reactions || [],
-        createdAt: p.created_at,
-      }));
-      setPosts(mappedPosts);
+      if (error) {
+        console.error("Error fetching posts:", error);
+      } else {
+        const mappedPosts: Post[] = (data || []).map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          thumbnailUrl: p.thumbnail_url,
+          videoUrl: p.video_url,
+          tags: p.tags,
+          author: {
+            id: p.author_id,
+            name: p.author_name,
+          },
+          comments: p.comments || [],
+          reactions: p.reactions || [],
+          createdAt: p.created_at,
+        }));
+        setPosts(mappedPosts);
+      }
+    } finally {
+      setIsLoaded(true);
     }
   };
 
@@ -159,6 +165,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         posts,
         nickname,
+        isLoaded,
         setNickname,
         handleUpload,
         handleDelete,
