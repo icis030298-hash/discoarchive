@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>VIRTUAL CRYPTO - FULL DENSITY</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --bg: #050508; --card: #0d0d14; --primary: #00ff88; --secondary: #ff4d4d; --loss: #ff4d4d; --border: #222; --news-panel: #000; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Pretendard', sans-serif; background: var(--bg); color: #fff; margin: 0; padding: 10px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        .setup-panel { background: var(--card); border: 1px solid var(--border); padding: 10px; border-radius: 12px; margin-bottom: 10px; flex-shrink: 0; }
+        .global-settings { display: flex; align-items: center; gap: 15px; padding-bottom: 8px; border-bottom: 1px solid #333; margin-bottom: 8px; }
+        .stock-adder { display: flex; gap: 8px; align-items: flex-end; }
+        .input-unit { display: flex; flex-direction: column; gap: 2px; }
+        label { font-size: 10px; color: #888; font-weight: bold; }
+        input { background: #000; border: 1px solid #333; color: #fff; padding: 5px 8px; border-radius: 4px; font-size: 12px; width: 85px; }
+        
+        .stock-tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; }
+        .tag { background: #1a1a25; padding: 3px 8px; border-radius: 4px; font-size: 11px; border: 1px solid #444; display: flex; align-items: center; gap: 5px; }
+        .tag button { background: none; border: none; color: var(--secondary); cursor: pointer; font-weight: bold; }
+
+        #global-timer { font-size: 22px; font-weight: 900; color: #ffcc00; font-family: monospace; margin-left: auto; }
+        #global-timer.blinded { color: #222; filter: blur(5px); }
+
+        #chart-grid { 
+            flex-grow: 1;
+            display: flex;
+            flex-direction: row; 
+            gap: 10px; 
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .exchange-card { 
+            flex: 1;
+            min-width: 0;
+            background: var(--card); border: 1px solid var(--border); border-radius: 10px; 
+            padding: 12px; display: flex; flex-direction: column; 
+            height: 100%; transition: 0.2s; 
+        }
+        
+        .limit-high { border: 3px solid var(--primary) !important; box-shadow: 0 0 20px rgba(0, 255, 136, 0.4); animation: blink-fast 0.4s infinite; }
+        .limit-low { border: 3px solid var(--secondary) !important; box-shadow: 0 0 20px rgba(255, 77, 77, 0.4); animation: blink-fast 0.4s infinite; }
+        @keyframes blink-fast { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+
+        .card-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #222; padding-bottom: 8px; flex-shrink: 0; }
+        .name-side { font-size: 22px; font-weight: 900; color: #eee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .price-side { text-align: right; }
+        .price { font-size: 28px; font-weight: 900; color: #fff; font-family: 'Pretendard', sans-serif; line-height: 1; }
+        .change-rate { font-size: 13px; font-weight: bold; margin-top: 4px; }
+
+        .canvas-wrap { height: 120px; position: relative; width: 100%; flex-shrink: 0; margin-bottom: 5px; }
+        
+        .orderbook-container { 
+            height: 180px;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 5px; 
+            font-family: monospace; font-size: 11px; overflow: hidden; 
+            border-top: 1px solid #222; border-bottom: 1px solid #222; 
+            padding: 8px 0; margin-bottom: 5px; flex-shrink: 0; 
+        }
+        
+        .news-feed { 
+            flex-grow: 1; 
+            background: var(--news-panel); border: 1px solid #222; border-radius: 6px; 
+            padding: 8px; overflow: hidden; display: flex; flex-direction: column; 
+        }
+        
+        .news-item { padding: 5px 0; border-bottom: 1px solid #111; animation: fadeInDown 0.4s ease-out; flex-shrink: 0; font-size: 13px; font-weight: 700; line-height: 1.4; }
+        .news-item.alert { color: var(--secondary); }
+        .news-item.good { color: var(--primary); }
+        .news-item.momentum { color: #ffcc00; font-style: italic; border-left: 2px solid #ffcc00; padding-left: 5px; }
+
+        #countdown-overlay { 
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(255, 0, 0, 0.9); color: white; padding: 30px 60px;
+            border-radius: 20px; font-size: 120px; font-weight: 900; font-family: monospace;
+            z-index: 2000; display: none; box-shadow: 0 0 100px #ff0000; border: 5px solid white; text-align: center;
+        }
+
+        .order-row { display: flex; justify-content: space-between; padding: 2px 5px; position: relative; z-index: 1; }
+        .depth-bar { position: absolute; top: 0; right: 0; height: 100%; z-index: -1; }
+        .sell .depth-bar { background: rgba(255, 77, 77, 0.12); border-right: 1px solid var(--secondary); }
+        .buy .depth-bar { background: rgba(0, 255, 136, 0.12); border-right: 1px solid var(--primary); }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .btn-start { background: linear-gradient(45deg, #00ff88, #00aaff); color: #000; border: none; padding: 8px 25px; border-radius: 6px; font-weight: 900; cursor: pointer; font-size: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="setup-panel">
+    <div class="global-settings">
+        <div class="setting-group"><label>시간(초)</label><input type="number" id="limit-sec" value="60"></div>
+        <div class="setting-group"><label>주기(ms)</label><input type="number" id="tick-ms" value="400"></div>
+        <div class="setting-group"><label>블라인드</label><input type="checkbox" id="blind-toggle"></div>
+        <button id="start-btn" class="btn-start" onclick="runSimulation()">EXCHANGE OPEN 🚀</button>
+        <div id="global-timer">READY</div>
+    </div>
+
+    <div class="stock-adder">
+        <div class="input-unit"><label>종목명</label><input type="text" id="new-name" placeholder="PASCAL"></div>
+        <div class="input-unit"><label>시작</label><input type="number" id="new-start" value="500"></div>
+        <div class="input-unit"><label>하한</label><input type="number" id="new-min" value="100"></div>
+        <div class="input-unit"><label>상한</label><input type="number" id="new-max" value="1000"></div>
+        <div class="input-unit"><label>변동</label><input type="number" id="new-step" value="15"></div>
+        <button onclick="addStock()" style="background:#333; color:#fff; border:none; padding:5px 15px; border-radius:4px; cursor:pointer; font-weight:bold; height:28px;">+ 추가</button>
+    </div>
+    <div id="tag-list" class="stock-tags"></div>
+</div>
+
+<div id="chart-grid"></div>
+<div id="countdown-overlay"><span style="font-size:24px; display:block; margin-bottom:10px;">🚨 장마감 10초전 🚨</span><span id="countdown-num">10</span></div>
+
+<script>
+    let stockDataList = [
+        { name: "PASCAL", start: 500, min: 100, max: 1000, step: 15 },
+        { name: "YUNKO", start: 500, min: 100, max: 1000, step: 15 },
+        { name: "BTC", start: 500, min: 100, max: 1000, step: 15 }
+    ];
+    let intervals = []; let stockStats = [];
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    const newsData = {
+        ultra_good: ["\u{1F680} {name} 흑인 말좆 양봉 출현! 숏충이 청산!", "\u{1F48E} {name} 메로나 출현! 흑두루미들 FOMO 폭발!", "\u{1F680} [속보] 일론 머스크, {name} 도입 확정!", "\u{1F31F} {name} 바이낸스 선물 상장 확정!"],
+        ultra_bad: ["\u{1F6A8} {name} 롱충이 대거 청산! 돔황챠!!", "\u{1F480} {name} 개흑우 벗방남들 손절 속출...", "\u{1F6A8} [긴급] {name} 메인넷 해킹 공격 확인!", "\u{26A0}\u{FE0F} [FUD] SEC, {name} 개발자 전격 기소"],
+        momentum_up: ["\u{1F4E1} [추세] {name} 상방 에너지! 세력 매집 중?", "\u{1F56F}\u{FE0F} [분석] {name} 바닥 다지기! 운전수 핸들 잡았다!"],
+        momentum_down: ["\u{26A0}\u{FE0F} [추세] {name} 하방 압력 심화! 지지선 어디고?", "\u{1F4C9} [분석] {name} 세력 이탈! 설거지 조심해라!"],
+        trend_up: ["\u{1F4C8} {name} 떡상 열차 출발! 무지성 풀매수 가즈아~", "\u{1F525} {name} 상방으로 말좆 제대로 꽂혔다!"],
+        trend_down: ["\u{1F4C9} {name} 계단식 하락... 이거 홀딩하면 개흑우", "\u{1F43B} {name} 곰형들 등판! 설거지 끝내고 나갔다"]
+    };
+
+    function playSound(type) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        if (type === 'good') { [523, 659, 783, 1046].forEach((f, i) => { const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.frequency.setValueAtTime(f, now + i*0.05); g.gain.setValueAtTime(0.04, now + i*0.05); g.gain.exponentialRampToValueAtTime(0.001, now + i*0.05 + 0.3); o.connect(g); g.connect(audioCtx.destination); o.start(now + i*0.05); o.stop(now + i*0.05 + 0.3); }); }
+        else if (type === 'bad' || type === 'siren') { const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type = (type === 'siren') ? 'sawtooth' : 'square'; o.frequency.setValueAtTime(type === 'siren' ? 450 : 220, now); if(type === 'siren') o.frequency.linearRampToValueAtTime(850, now + 0.1); g.gain.setValueAtTime(0.03, now); g.gain.setValueAtTime(0, now + 0.1); o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now + 0.1); }
+        else if (type === 'bomb') { const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type = 'square'; o.frequency.setValueAtTime(80, now); o.frequency.exponentialRampToValueAtTime(10, now + 0.6); g.gain.setValueAtTime(0.25, now); g.gain.linearRampToValueAtTime(0.001, now + 0.6); o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now + 0.6); }
+    }
+
+    function renderTags() { document.getElementById('tag-list').innerHTML = stockDataList.map((s, i) => `<div class="tag"><b>${s.name}</b> <button onclick="removeStock(${i})">×</button></div>`).join(''); }
+    function addStock() { const name = document.getElementById('new-name').value.trim().toUpperCase(); const start = parseInt(document.getElementById('new-start').value); const min = parseInt(document.getElementById('new-min').value); const max = parseInt(document.getElementById('new-max').value); const step = parseInt(document.getElementById('new-step').value); if(name) { stockDataList.push({ name, start, min, max, step }); document.getElementById('new-name').value = ''; renderTags(); } }
+    function removeStock(idx) { stockDataList.splice(idx, 1); renderTags(); }
+
+    function runSimulation() {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        document.getElementById('start-btn').disabled = true;
+        const grid = document.getElementById('chart-grid'); grid.innerHTML = '';
+        intervals.forEach(clearInterval); intervals = []; stockStats = [];
+        const isBlind = document.getElementById('blind-toggle').checked;
+        const timerEl = document.getElementById('global-timer');
+        const totalSec = parseInt(document.getElementById('limit-sec').value);
+        const tickMs = parseInt(document.getElementById('tick-ms').value);
+        timerEl.classList.toggle('blinded', isBlind);
+        const displayTicks = isBlind ? Math.floor((totalSec * 2000) / tickMs) : Math.floor((totalSec * 1000) / tickMs);
+
+        stockDataList.forEach((s, i) => {
+            initExchange(s, i, displayTicks, tickMs);
+            stockStats[i] = { cooldown: 0, history: [] };
+        });
+
+        let timeLeft = totalSec;
+        const overlay = document.getElementById('countdown-overlay');
+        const masterTimer = setInterval(() => {
+            timeLeft--;
+            timerEl.innerText = `00:${timeLeft < 10 ? '0'+timeLeft : timeLeft}`;
+            stockStats.forEach(s => { if(s.cooldown > 0) s.cooldown--; });
+            if (timeLeft <= 10 && timeLeft > 0) { overlay.style.display = 'block'; document.getElementById('countdown-num').innerText = timeLeft; playSound('siren'); if(timeLeft === 10) playSound('bomb'); }
+            if(timeLeft <= 0) { clearInterval(masterTimer); intervals.forEach(clearInterval); timerEl.innerText = "CLOSED"; timerEl.classList.remove('blinded'); overlay.style.display = 'none'; finishMarket(); document.getElementById('start-btn').disabled = false; playSound('bomb'); }
+        }, 1000);
+        intervals.push(masterTimer);
+    }
+
+    function initExchange(s, idx, displayTicks, tickMs) {
+        const grid = document.getElementById('chart-grid');
+        const card = document.createElement('div');
+        card.className = 'exchange-card'; card.id = `card-${idx}`;
+        card.innerHTML = `
+            <div class="card-header"><span class="name-side">${s.name}</span><div class="price-side"><div id="p-${idx}" class="price">${s.start}</div><div id="rate-${idx}" class="change-rate">0.00%</div></div></div>
+            <div class="canvas-wrap"><canvas id="can-${idx}"></canvas></div>
+            <div class="orderbook-container"><div id="sell-list-${idx}"></div><div id="buy-list-${idx}"></div></div>
+            <div class="news-feed" id="news-feed-${idx}"><div class="news-item info">>>> [SYSTEM] ${s.name} READY.</div></div>
+        `;
+        grid.appendChild(card);
+        const ctx = document.getElementById(`can-${idx}`).getContext('2d');
+        const chart = new Chart(ctx, { type: 'line', data: { labels: Array(displayTicks).fill(''), datasets: [{ data: [s.start], borderColor: '#fff', borderWidth: 2, pointRadius: 0, fill: false, tension: 0.1 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: true, grid: { color: '#111' } }, y: { min: s.min, max: s.max, ticks: { display: false }, grid: { color: '#111' } } }, plugins: { legend: { display: false } } } });
+
+        let cur = s.start;
+        const tickInterval = setInterval(() => {
+            const old = cur; const step = Math.floor(Math.random() * (s.step + 1));
+            cur = (Math.random() > 0.5) ? cur + step : cur - step;
+            if (cur <= s.min) { cur = s.min; card.classList.add('limit-low'); } else if (cur >= s.max) { cur = s.max; card.classList.add('limit-high'); } else { card.classList.remove('limit-low', 'limit-high'); }
+            processMixedNews(idx, s, cur, old, step);
+            const pEl = document.getElementById(`p-${idx}`); const rEl = document.getElementById(`rate-${idx}`); const rate = ((cur - s.start) / s.start * 100).toFixed(2);
+            pEl.innerText = cur; rEl.innerText = (rate > 0 ? '+' : '') + rate + '%';
+            pEl.classList.remove('up-flash', 'down-flash'); void pEl.offsetWidth; 
+            if (cur > old) pEl.classList.add('up-flash'); else if (cur < old) pEl.classList.add('down-flash');
+            const color = (cur >= s.start) ? '#00ff88' : '#ff4d4d'; 
+            rEl.style.color = color; chart.data.datasets[0].borderColor = color; chart.data.datasets[0].data.push(cur); chart.update('none');
+            updateOrderbook(idx, cur);
+        }, tickMs);
+        intervals.push(tickInterval);
+    }
+
+    function processMixedNews(idx, s, cur, old, step) {
+        const stat = stockStats[idx]; stat.history.push(cur);
+        if(stat.history.length > 8) stat.history.shift();
+        if (stat.cooldown > 0) return;
+        let text = ""; let type = "info";
+        if (stat.history.length >= 8) {
+            const diff = stat.history[7] - stat.history[0];
+            if (diff > s.step * 2.5 && Math.random() > 0.7) { text = getNews('momentum_up', s.name); type='momentum'; }
+            else if (diff < -(s.step * 2.5) && Math.random() > 0.7) { text = getNews('momentum_down', s.name); type='momentum'; }
+        }
+        if (!text && step >= s.step - 1) {
+            if (cur > old && cur > s.start * 1.1) { text = getNews('ultra_good', s.name); type='good'; playSound('good'); }
+            else if (cur < old && cur < s.start * 0.9) { text = getNews('ultra_bad', s.name); type='alert'; playSound('bad'); }
+        }
+        if (text) { addNewsToFeed(idx, text, type); stat.cooldown = 12; }
+    }
+
+    function getNews(key, name) { return newsData[key][Math.floor(Math.random() * newsData[key].length)].replace(/{name}/g, name); }
+    function addNewsToFeed(idx, text, type) {
+        const f = document.getElementById(`news-feed-${idx}`); const item = document.createElement('div');
+        item.className = `news-item ${type}`; item.innerText = text;
+        f.insertBefore(item, f.firstChild); if (f.children.length > 30) f.removeChild(f.lastChild);
+    }
+
+    function updateOrderbook(idx, price) {
+        const sellList = document.getElementById(`sell-list-${idx}`); const buyList = document.getElementById(`buy-list-${idx}`);
+        const createRow = (p, type) => { const qty = (Math.random() * 100).toFixed(0); return `<div class="order-row ${type}"><div class="depth-bar" style="width: ${qty}%"></div><span class="${type==='sell'?'sell-price':'buy-price'}">${p}</span><span style="color:#666;">${qty}K</span></div>`; };
+        let sells = '', buys = ''; 
+        for(let i=1; i<=7; i++) { sells = createRow(price + i, 'sell') + sells; buys += createRow(price - i, 'buy'); }
+        sellList.innerHTML = sells; buyList.innerHTML = buys;
+    }
+
+    function finishMarket() { stockDataList.forEach((s, i) => { const final = parseInt(document.getElementById(`p-${i}`).innerText); document.getElementById(`card-${i}`).style.borderColor = (final >= s.start) ? 'var(--primary)' : 'var(--secondary)'; }); }
+    renderTags();
+</script>
+</body>
+</html>
