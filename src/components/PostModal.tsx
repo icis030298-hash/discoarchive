@@ -9,8 +9,12 @@ interface PostModalProps {
   onUpdate?: (id: string, data: Partial<Post>) => void;
 }
 
-export default function PostModal({ post, onClose, onDelete, onUpdate }: PostModalProps) {
-  const { nickname, handleAddComment: submitComment, handleAddReaction: submitReaction } = usePosts();
+export default function PostModal({ post: initialPost, onClose, onDelete, onUpdate }: PostModalProps) {
+  const { posts, nickname, handleAddComment: submitComment, handleAddReaction: submitReaction } = usePosts();
+  
+  // Find the latest version of this post from the global state
+  const post = posts.find(p => p.id === initialPost.id) || initialPost;
+  
   const [newComment, setNewComment] = useState("");
   
   // Edit & Delete States
