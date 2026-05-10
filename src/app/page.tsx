@@ -14,10 +14,7 @@ export default function Home() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [activeTag, setActiveTag] = useState<string | null>(null);
 
-  const allTags = useMemo(
-    () => Array.from(new Set(posts.flatMap((p) => p.tags))),
-    [posts]
-  );
+  const allTags = ["LOL", "메이플스토리", "스타크래프트", "종합게임"];
 
   const filteredPosts = useMemo(
     () => (activeTag ? posts.filter((p) => p.tags.includes(activeTag)) : posts),
@@ -52,12 +49,10 @@ export default function Home() {
         <section className="relative py-16 px-6 text-center overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-discord-blurple/10 to-transparent pointer-events-none" />
           <h1 className="relative text-4xl md:text-5xl font-extrabold text-white mb-3 tracking-tight">
-            Our{" "}
-            <span className="text-discord-blurple">Discord</span>{" "}
-            Memories
+            겜창들의 <span className="text-discord-blurple">방송국</span>
           </h1>
           <p className="relative text-discord-muted text-lg max-w-xl mx-auto">
-            친구들과 디스코드에서 함께한 순간들을 기록하고 공유해보세요.
+            여기에 알아서 박제해라 이기들
           </p>
         </section>
 
