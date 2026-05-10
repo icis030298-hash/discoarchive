@@ -16,12 +16,14 @@ export default function UploadModal({ onClose, onUpload }: UploadModalProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !mediaUrl) return;
+    if (!title) return;
+
+    const defaultThumbnail = "https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=800&q=80";
 
     onUpload({
       title,
       tags: tags.split(",").map(t => t.trim()).filter(Boolean),
-      thumbnailUrl: isVideo ? "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80" : mediaUrl, // Mock thumbnail for video
+      thumbnailUrl: mediaUrl ? (isVideo ? "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80" : mediaUrl) : defaultThumbnail,
       videoUrl: isVideo ? mediaUrl : undefined,
     });
   };
@@ -133,7 +135,7 @@ export default function UploadModal({ onClose, onUpload }: UploadModalProps) {
               </button>
               <button 
                 type="submit"
-                disabled={!title || !mediaUrl}
+                disabled={!title}
                 className="bg-discord-blurple text-white px-6 py-2.5 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#5865F2] transition-colors"
               >
                 Post Memory

@@ -62,9 +62,7 @@ export function PostProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("정말로 이 게시물을 삭제하시겠습니까?")) {
-      setPosts(posts.filter((p) => p.id !== id));
-    }
+    setPosts(posts.filter((p) => p.id !== id));
   };
 
   const handleUpdate = (id: string, updatedData: Partial<Post>) => {
