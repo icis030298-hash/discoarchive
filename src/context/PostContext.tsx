@@ -61,6 +61,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
           author: {
             id: p.author_id,
             name: p.author_name,
+            avatarUrl: p.author_avatar_url || "",
           },
           comments: p.comments || [],
           reactions: p.reactions || [],
